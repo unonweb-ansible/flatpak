@@ -140,3 +140,26 @@
       - flatpak.auto_updates.user.service.src == None
       - flatpak.auto_updates.user.timer.src == None
       fail_msg: flatpak.auto_updates.user not implemented
+
+  # cleanup
+  - block:
+
+    # flatpak.cleanup.files.remove
+    - when: flatpak.cleanup.files.remove | length > 0
+      name: Remove {{ flatpak.cleanup.files.remove }}
+      become: true
+      loop: "{{ flatpak.cleanup.files.remove }}"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      failed_when: false
+
+    # cleanup.systemd.disable
+    - when: flatpak.cleanup.systemd.disable | length > 0
+      name: Disable {{ flatpak.cleanup.systemd.disable }}
+      become: true
+      loop: "{{ flatpak.cleanup.systemd.disable }}"
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        enabled: false
+      failed_when: false

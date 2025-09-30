@@ -19,10 +19,10 @@ flatpak:
   auto_updates:
     system:
       service:
-        src: flatpak-update-system.service
+        src: fk.flatpak-update-system.service
         enabled: true
       timer:
-        src: flatpak-update-system.timer
+        src: fk.flatpak-update-system.timer
         enabled: true
     user:
       service:
@@ -31,3 +31,11 @@ flatpak:
       timer:
         src:
         enabled: false
+  cleanup:
+    systemd:
+      disable:
+        - flatpak-update-system.timer
+    files:
+      remove:
+      - /etc/systemd/system/flatpak-update-system.timer
+      - /etc/systemd/system/flatpak-update-system.service
