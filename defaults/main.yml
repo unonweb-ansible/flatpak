@@ -1,0 +1,33 @@
+---
+flatpak:
+  user:
+  apt:
+    state: present
+  remote:
+    url: https://flathub.org/repo/flathub.flatpakrepo # https://dl.flathub.org/repo/ # https://dl.flathub.org/repo/flathub.flatpakrepo
+    scope: system # user
+    enabled: true
+    name: flathub
+    state: present
+  install:
+    system: []
+    user: []
+  remove:
+    system: []
+    user: []
+  restart_daemons: false
+  auto_updates:
+    system:
+      service:
+        src: flatpak-update-system.service
+        enabled: true
+      timer:
+        src: flatpak-update-system.timer
+        enabled: true
+    user:
+      service:
+        enabled: false
+        src:
+      timer:
+        src:
+        enabled: false

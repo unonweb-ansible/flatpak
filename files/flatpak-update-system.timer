@@ -1,0 +1,10 @@
+[Unit]
+Description=Run flatpak update some time after boot
+
+[Timer]
+OnBootSec=50
+RandomizedDelaySec=10s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
