@@ -1,0 +1,68 @@
+- when: flatpak_systemd_scope == "system"
+  block:
+
+  # copy
+  - when: flatpak_systemd_copy | length > 0
+    name: Copy systemd unit files {{ flatpak_systemd_copy }}
+    become: true
+    notify: systemctl --system daemon-reload
+    loop: "{{ flatpak_systemd_copy }}"
+    ansible.builtin.copy:
+      src: "{{ item }}"
+      dest: "/etc/systemd/system/{{ item.split('/')[-1] }}" # systemd/un.machines.service -> un.machines.service
+      owner: root
+      group: root
+      mode: u=rw,g=r,o=r
+
+  # template
+  - when: flatpak_systemd_template | length > 0
+    name: Template systemd unit files {{ flatpak_systemd_template }}
+    become: true
+    notify: systemctl --system daemon-reload
+    loop: "{{ flatpak_systemd_template }}"
+    ansible.builtin.template:
+      src: "{{ role_path }}/files/{{ flatpak_app }}/{{ item }}"
+      dest: "/etc/systemd/system/{{ item.split('/')[-1].replace('.j2', '') }}" # systemd/un.machines.service.j2 -> un.machines.service.j2 -> systemd/un.machines.service
+      owner: root
+      group: root
+      mode: u=rw,g=r,o=r
+
+  # enable
+  - when: flatpak_systemd_enable | length > 0
+    name: systemctl --system enable {{ flatpak_systemd_enable }}
+    become: true
+    loop: "{{ flatpak_systemd_enable }}"
+    ansible.builtin.systemd_service:
+      scope: system
+      name: "{{ item }}"
+      enabled: true
+
+  # disable
+  - when: flatpak_systemd_disable | length > 0
+    name: systemctl --system disable {{ flatpak_systemd_disable }}
+    become: true
+    loop: "{{ flatpak_systemd_disable }}"
+    ansible.builtin.systemd_service:
+      scope: system
+      name: "{{ item }}"
+      enabled: false
+
+  # start
+  - when: flatpak_systemd_start | length > 0
+    name: systemctl --system start {{ flatpak_systemd_start }}
+    become: true
+    loop: "{{ flatpak_systemd_start }}"
+    ansible.builtin.systemd_service:
+      scope: system
+      name: "{{ item }}"
+      state: started
+
+  # stop
+  - when: flatpak_systemd_stop | length > 0
+    name: systemctl --system stop {{ flatpak_systemd_stop }}
+    become: true
+    loop: "{{ flatpak_systemd_stop }}"
+    ansible.builtin.systemd_service:
+      scope: system
+      name: "{{ item }}"
+      state: stopped

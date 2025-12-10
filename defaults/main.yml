@@ -1,41 +1,15 @@
 ---
-flatpak:
-  user:
-  apt:
-    state: present
-  remote:
-    url: https://flathub.org/repo/flathub.flatpakrepo # https://dl.flathub.org/repo/ # https://dl.flathub.org/repo/flathub.flatpakrepo
-    scope: system # user
-    enabled: true
-    name: flathub
-    state: present
-  install:
-    system: []
-    user: []
-  remove:
-    system: []
-    user: []
-  restart_daemons: false
-  auto_updates:
-    system:
-      service:
-        src: fk.flatpak-update-system.service
-        enabled: true
-      timer:
-        src: fk.flatpak-update-system.timer
-        enabled: true
-    user:
-      service:
-        enabled: false
-        src:
-      timer:
-        src:
-        enabled: false
-  cleanup:
-    systemd:
-      disable:
-        - flatpak-update-system.timer
-    files:
-      remove:
-      - /etc/systemd/system/flatpak-update-system.timer
-      - /etc/systemd/system/flatpak-update-system.service
+flatpak_user:
+flatpak_apt_state: present
+flatpak_install_system: []
+flatpak_install_user: []
+flatpak_remove_system: []
+flatpak_remove_user: []
+flatpak_handler_restart: true
+flatpak_systemd_scope: system
+flatpak_systemd_copy: []
+flatpak_systemd_template: []
+flatpak_systemd_start: []
+flatpak_systemd_enable: []
+flatpak_systemd_disable: []
+flatpak_systemd_stop: []

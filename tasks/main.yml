@@ -1,23 +1,4 @@
 ---
-# FLATPAK
-# -------
-
-# Per-user installations are only available to the user that installed them, while system-wide installations are available to all users on the system
-# System-wide installations can be updated by any user with administrator privileges
-
-# Add remote repo:
-# flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-
-# Delete remote repo:
-# flatpak remote-delete flathub
-# Requires all associated apps to be uninstalled!
-
-# Add only verified apps to your local repository:
-# flatpak remote-add --if-not-exists --subset=verified flathub-verified https://flathub.org/repo/flathub.flatpakrepo
-
-# Remove a subset and return to the unfiltered repository:
-# flatpak remote-modify --subset= flathub
-
 - name: flatpak-install role
   tags:
     - flatpak
@@ -29,53 +10,47 @@
     block:
 
     # apt
-    - name: Apt {{ flatpak.apt.state }} flatpak
+    - name: Apt {{ flatpak_apt_state }} flatpak
       become: true
       ansible.builtin.apt:
-        state: "{{ flatpak.apt.state }}"
+        state: "{{ flatpak_apt_state }}"
         name: flatpak
 
-    # check
-    - name: Check vars for flatpak
-      ansible.builtin.assert:
-        that: flatpak.remote.scope != "user"
-        fail_msg: flatpak.remote.scope = "user" is not possible / not implemented
-
-    # remote
-    - name: Add remote {{ flatpak.remote.url }} --{{ flatpak.remote.scope }} # works only for system
+    # add flathub remote
+    - name: Add flathub repo to system # works only for system
       tags: flatpak-remote
       become: true
       community.general.flatpak_remote:
         executable: /usr/bin/flatpak
-        name: "{{ flatpak.remote.name }}"
-        state: "{{ flatpak.remote.state }}"
-        method: "{{ flatpak.remote.scope }}"
-        enabled: "{{ flatpak.remote.enabled }}"
-        flatpakrepo_url: "{{ flatpak.remote.url }}"
+        name: flathub
+        state: present
+        method: system
+        enabled: true
+        flatpakrepo_url: https://flathub.org/repo/flathub.flatpakrepo # https://dl.flathub.org/repo/ # https://dl.flathub.org/repo/flathub.flatpakrepo
 
-  # flatpak-software
-  - name: Install flatpaks software
+  # flatpak-apps
+  - name: Install flatpak apps
     block:
 
     # install system
-    - name: Install system flatpaks
-      when: flatpak.install.system | length > 0
+    - when: flatpak_install_system | length > 0
+      name: Install system flatpaks {{ flatpak_install_system }}
       tags: flatpak-install
       become: true
       community.general.flatpak:
         method: system
         state: present
-        name: "{{ flatpak.install.system }}"
+        name: "{{ flatpak_install_system }}"
 
     # remove system
-    - name: Remove system flatpaks
-      when: flatpak.remove.system | length > 0
+    - when: flatpak_remove_system | length > 0
+      name: Remove system flatpaks {{ flatpak_remove_system }}
       tags: flatpak-remove
       become: true
       community.general.flatpak:
         method: system
         state: absent
-        name: "{{ flatpak.remove.system }}"
+        name: "{{ flatpak_remove_system }}"
 
     # install user (not implemented)
     - ansible.builtin.assert:
@@ -83,83 +58,14 @@
         fail_msg: "flatpak.install.user is not implemented {{ flatpak.install.user }}"
 
     # remove user
-    - name: Remove user flatpaks
-      when: flatpak.remove.user | length == 0
+    - when: flatpak_remove_user | length == 0
+      name: Remove user flatpaks {{ flatpak_remove_user }}
       tags: flatpak-remove
       become: true
       community.general.flatpak:
         method: user
         state: absent
-        name: "{{ flatpak.remove.user}}"
+        name: "{{ flatpak_remove_user}}"
 
-  # auto updates system service
-  - when: flatpak.auto_updates.system.service.src != None
-    tags: flatpak-auto-updates
-    block:
-
-    # cp system service
-    - name: Copy {{ flatpak.auto_updates.system.service.src }}
-      become: true
-      notify: Systemd daemon-reload
-      ansible.builtin.copy:
-        src: "{{ flatpak.auto_updates.system.service.src }}"
-        dest: /etc/systemd/system/
-
-    # enable system service
-    - name: Enabled {{ flatpak.auto_updates.system.service.src }} {{ flatpak.auto_updates.system.service.enabled }}
-      become: true
-      ansible.builtin.systemd_service:
-        name: "{{ flatpak.auto_updates.system.service.src }}"
-        enabled: "{{ flatpak.auto_updates.system.service.enabled }}"
-        scope: system
-
-  # auto updates system timer
-  - when: flatpak.auto_updates.system.timer.src != None
-    tags: flatpak-auto-updates
-    block:
-
-    # cp system timer
-    - name: Copy {{ flatpak.auto_updates.system.timer.src }}
-      become: true
-      notify: Systemd daemon-reload
-      ansible.builtin.copy:
-        src: "{{ flatpak.auto_updates.system.timer.src }}"
-        dest: /etc/systemd/system/
-
-    # enable system timer
-    - name: Enabled {{ flatpak.auto_updates.system.timer.src }} {{ flatpak.auto_updates.system.timer.enabled }}
-      become: true
-      ansible.builtin.systemd_service:
-        name: "{{ flatpak.auto_updates.system.timer.src }}"
-        enabled: "{{ flatpak.auto_updates.system.timer.enabled }}"
-        scope: system
-
-  # auto updates user service|timer (not implemented)
-  - ansible.builtin.assert:
-      that: 
-      - flatpak.auto_updates.user.service.src == None
-      - flatpak.auto_updates.user.timer.src == None
-      fail_msg: flatpak.auto_updates.user not implemented
-
-  # cleanup
-  - block:
-
-    # flatpak.cleanup.files.remove
-    - when: flatpak.cleanup.files.remove | length > 0
-      name: Remove {{ flatpak.cleanup.files.remove }}
-      become: true
-      loop: "{{ flatpak.cleanup.files.remove }}"
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: absent
-      failed_when: false
-
-    # cleanup.systemd.disable
-    - when: flatpak.cleanup.systemd.disable | length > 0
-      name: Disable {{ flatpak.cleanup.systemd.disable }}
-      become: true
-      loop: "{{ flatpak.cleanup.systemd.disable }}"
-      ansible.builtin.systemd_service:
-        name: "{{ item }}"
-        enabled: false
-      failed_when: false
+  # systemd
+  - ansible.builtin.import_tasks: systemd.yml
