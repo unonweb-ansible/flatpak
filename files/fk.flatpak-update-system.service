@@ -1,12 +1,5 @@
-# must be installed in /etc/systemd/system
-
 [Unit]                                                                                                                                                                                                             
-Description=update system flatpaks
-DefaultDependencies=no
-After=network-online.target
-#Before=shutdown.target
-#Before=halt.target
-Wants=network-online.target
+Description=Update system flatpaks
 
 [Service]
 Type=oneshot
@@ -15,12 +8,7 @@ ExecStart=/usr/bin/flatpak --system uninstall --unused --assumeyes --noninteract
 ExecStart=/usr/bin/flatpak --system repair
 TimeoutStopSec=180
 # configures the time to wait for the service itself to stop. If it does not terminate in the specified time, it will be forcibly terminated by SIGKILL
-StandardOutput=journal
-StandardError=journal
+StandardOutput=journal+console
+StandardError=journal+console
 SyslogLevel=info
 RemainAfterExit=false
-
-[Install]
-WantedBy=multi-user.target
-#WantedBy=shutdown.target
-#WantedBy=halt.target
