@@ -54,8 +54,8 @@
 
     # install user (not implemented)
     - ansible.builtin.assert:
-        that: flatpak.install.user | length == 0
-        fail_msg: "flatpak.install.user is not implemented {{ flatpak.install.user }}"
+        that: flatpak_install_user | length == 0
+        fail_msg: "flatpak_install_user is not implemented {{ flatpak_install_user }}"
 
     # remove user
     - when: flatpak_remove_user | length == 0
